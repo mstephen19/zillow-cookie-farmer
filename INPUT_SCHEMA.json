@@ -1,0 +1,7 @@
+{
+    "title": "Input schema for the hello_word actor.",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {},
+    "required": []
+}
