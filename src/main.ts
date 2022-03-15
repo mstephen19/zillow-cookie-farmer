@@ -1,10 +1,10 @@
-import Apify, { RequestOptions } from 'apify';
+import Apify, { RequestOptions, RequestList } from 'apify';
 
 import { GlobalStore } from 'apify-global-store';
 
 import { MAIN_URL } from './consts';
 
-const { puppeteer } = Apify.utils;
+const { puppeteer, log } = Apify.utils;
 
 interface Schema {
     requestsNum?: number;
@@ -12,6 +12,7 @@ interface Schema {
 
 Apify.main(async () => {
     const { requestsNum = 50 } = (await Apify.getInput()) as Schema;
+    log.info(`Will make ${requestsNum} requests.`);
 
     const store = new GlobalStore('COOKIE-STORE');
     await store.initialize({ cookies: [] });
@@ -53,7 +54,7 @@ Apify.main(async () => {
                 await puppeteer.blockRequests(page);
             },
         ],
-        handlePageFunction: async ({ session, request, response }) => {
+        handlePageFunction: async ({ session, request, response, crawler: { requestList: rl } }) => {
             session.setCookiesFromResponse(response);
             const cookie = session.getCookieString(request.url);
             store.set((prev) => {
@@ -61,6 +62,8 @@ Apify.main(async () => {
                     cookies: [...new Set([...prev?.cookies, cookie])],
                 };
             });
+            if (rl) log.info(`Made ${rl.length() - requestsNum} requests.`);
+            log.info(`Scraped ${store.state.cookies.length} unique cookies so far.`);
         },
     });
 
